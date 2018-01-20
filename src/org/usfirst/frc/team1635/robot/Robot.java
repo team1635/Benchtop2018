@@ -7,6 +7,7 @@
 
 package org.usfirst.frc.team1635.robot;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.VictorSP;
@@ -35,6 +36,8 @@ public class Robot extends IterativeRobot {
 			= new DifferentialDrive(rightSCG,leftSCG );
 	private Joystick m_stick = new Joystick(0);
 	private Timer m_timer = new Timer();
+	
+	private String gameData;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -51,6 +54,10 @@ public class Robot extends IterativeRobot {
 	public void autonomousInit() {
 		m_timer.reset();
 		m_timer.start();
+		
+		gameData = DriverStation.getInstance().getGameSpecificMessage();
+		
+		System.out.println("autonomousInit(): Game Data: " + gameData);
 	}
 
 	/**
