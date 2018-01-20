@@ -7,12 +7,17 @@
 
 package org.usfirst.frc.team1635.robot;
 
+import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDOutput;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 
 /**
@@ -22,26 +27,52 @@ import edu.wpi.first.wpilibj.SpeedControllerGroup;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
-public class Robot extends IterativeRobot {
-	private VictorSP frontLeftMotor = new VictorSP(8); 
+public class Robot extends IterativeRobot implements PIDOutput {
+	private VictorSP frontLeftMotor = new VictorSP(8);
 	private VictorSP backLeftMotor = new VictorSP(1);
 	private SpeedControllerGroup leftSCG = new SpeedControllerGroup(frontLeftMotor, backLeftMotor);
-	
+
 	private VictorSP frontRightMotor = new VictorSP(9);
 	private VictorSP backRightMotor = new VictorSP(0);
-	private SpeedControllerGroup rightSCG = new SpeedControllerGroup(frontRightMotor,backRightMotor);
-	
-	
-	private DifferentialDrive m_robotDrive
-			= new DifferentialDrive(rightSCG,leftSCG );
+	private SpeedControllerGroup rightSCG = new SpeedControllerGroup(frontRightMotor, backRightMotor);
+
+	private DifferentialDrive m_robotDrive = new DifferentialDrive(rightSCG, leftSCG);
 	private Joystick m_stick = new Joystick(0);
 	private Timer m_timer = new Timer();
-	
+
 	private String gameData;
+	private AHRS ahrs;
+	private PIDController turnController;
+	private double rotateToAngleRate;
+
+	static final double kP = 0.03;
+	static final double kI = 0.00;
+	static final double kD = 0.00;
+	static final double kF = 0.00;
+
+	static final double kToleranceDegrees = 2.0f;
+
+	public Robot() {
+		try {
+			ahrs = new AHRS(SPI.Port.kMXP);
+		} catch (RuntimeException ex) {
+			DriverStation.reportError("Error instantiating navX MXP:  " + ex.getMessage(), true);
+		}
+
+		turnController = new PIDController(kP, kI, kD, kF, ahrs, this);
+		turnController.setInputRange(-180.0f, 180.0f);
+		turnController.setOutputRange(-1.0, 1.0);
+		turnController.setAbsoluteTolerance(kToleranceDegrees);
+		turnController.setContinuous(true);
+
+		// LiveWindow.addActuator("DriveSystem", "RotateController", turnController);
+		LiveWindow.add(turnController);
+		turnController.setName("DriveSystem", "RotateController");
+	}
 
 	/**
-	 * This function is run when the robot is first started up and should be
-	 * used for any initialization code.
+	 * This function is run when the robot is first started up and should be used
+	 * for any initialization code.
 	 */
 	@Override
 	public void robotInit() {
@@ -54,9 +85,9 @@ public class Robot extends IterativeRobot {
 	public void autonomousInit() {
 		m_timer.reset();
 		m_timer.start();
-		
+
 		gameData = DriverStation.getInstance().getGameSpecificMessage();
-		
+
 		System.out.println("autonomousInit(): Game Data: " + gameData);
 	}
 
@@ -85,11 +116,45 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void teleopPeriodic() {
-		//next line works
-		//m_robotDrive.arcadeDrive(m_stick.getY() * -1.0, m_stick.getX());
-		//next line doesn't work  GetY(right) reacts to left joystick
-		//m_robotDrive.tankDrive(m_stick.getY() * -1.0, m_stick.getY(GenericHID.Hand.kRight) * -1.0);
-		m_robotDrive.tankDrive( m_stick.getRawAxis(5) * -1.0, m_stick.getY() * -1.0, true);
+		// myRobot.setSafetyEnabled(true);
+		while (isOperatorControl() && isEnabled()) {
+
+			// next line works
+			// m_robotDrive.arcadeDrive(m_stick.getY() * -1.0, m_stick.getX());
+			// next line doesn't work GetY(right) reacts to left joystick
+			// m_robotDrive.tankDrive(m_stick.getY() * -1.0,
+			// m_stick.getY(GenericHID.Hand.kRight) * -1.0);
+
+			boolean rotateToAngle = false;
+			if (m_stick.getRawButton(1)) {
+				ahrs.reset();
+			}
+			if (m_stick.getRawButton(2)) {
+				turnController.setSetpoint(0.0f);
+				rotateToAngle = true;
+			} else if (m_stick.getRawButton(3)) {
+				turnController.setSetpoint(90.0f);
+				rotateToAngle = true;
+			} else if (m_stick.getRawButton(4)) {
+				turnController.setSetpoint(179.9f);
+				rotateToAngle = true;
+			} else if (m_stick.getRawButton(5)) {
+				turnController.setSetpoint(-90.0f);
+				rotateToAngle = true;
+			}
+
+			double currentRotationRate;
+			if (rotateToAngle) {
+				turnController.enable();
+				currentRotationRate = rotateToAngleRate;
+				m_robotDrive.arcadeDrive(.5, currentRotationRate);
+			} else {
+				turnController.disable();
+				m_robotDrive.tankDrive(m_stick.getRawAxis(5) * -1.0, m_stick.getY() * -1.0, true);
+			}
+			
+			Timer.delay(0.005); // wait for a motor update time
+		}
 	}
 
 	/**
@@ -98,4 +163,11 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void testPeriodic() {
 	}
+	
+    @Override
+    /* This function is invoked periodically by the PID Controller, */
+    /* based upon navX MXP yaw angle input and PID Coefficients.    */
+    public void pidWrite(double output) {
+        rotateToAngleRate = output;
+    }
 }
