@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
 
 /**
@@ -61,13 +62,17 @@ public class Robot extends IterativeRobot implements PIDOutput {
 
 		turnController = new PIDController(kP, kI, kD, kF, ahrs, this);
 		turnController.setInputRange(-180.0f, 180.0f);
-		turnController.setOutputRange(-1.0, 1.0);
+		turnController.setOutputRange(-0.5, 0.5);
 		turnController.setAbsoluteTolerance(kToleranceDegrees);
 		turnController.setContinuous(true);
 
 		// LiveWindow.addActuator("DriveSystem", "RotateController", turnController);
 		LiveWindow.add(turnController);
 		turnController.setName("DriveSystem", "RotateController");
+		
+		//next line does not do anything, probably because ahrs does not implement Sendable
+		LiveWindow.add(ahrs);  
+		ahrs.setName("Navigation", "NavX");		
 	}
 
 	/**
@@ -76,6 +81,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void robotInit() {
+		this.m_robotDrive.setSafetyEnabled(false);
 	}
 
 	/**
@@ -98,7 +104,8 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	public void autonomousPeriodic() {
 		// Drive for 2 seconds
 		if (m_timer.get() < 2.0) {
-			m_robotDrive.arcadeDrive(0.5, 0.0); // drive forwards half speed
+			//m_robotDrive.arcadeDrive(0.5, 0.0); // our robot drives backwards half speed
+			m_robotDrive.arcadeDrive(-0.5, 0.0);
 		} else {
 			m_robotDrive.stopMotor(); // stop robot
 		}
@@ -116,8 +123,13 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void teleopPeriodic() {
+		
 		// myRobot.setSafetyEnabled(true);
 		while (isOperatorControl() && isEnabled()) {
+
+			SmartDashboard.putNumber("NavX Pitch", ahrs.getPitch());
+			SmartDashboard.putNumber("NavX Roll", ahrs.getRoll());
+			SmartDashboard.putNumber("NavX Yaw", ahrs.getYaw());
 
 			// next line works
 			// m_robotDrive.arcadeDrive(m_stick.getY() * -1.0, m_stick.getX());
@@ -126,19 +138,19 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			// m_stick.getY(GenericHID.Hand.kRight) * -1.0);
 
 			boolean rotateToAngle = false;
-			if (m_stick.getRawButton(1)) {
+			if (m_stick.getRawButton(5)) {  // Left bumper
 				ahrs.reset();
 			}
-			if (m_stick.getRawButton(2)) {
+			if (m_stick.getRawButton(4)) {        // Y
 				turnController.setSetpoint(0.0f);
 				rotateToAngle = true;
-			} else if (m_stick.getRawButton(3)) {
+			} else if (m_stick.getRawButton(2)) { // B
 				turnController.setSetpoint(90.0f);
 				rotateToAngle = true;
-			} else if (m_stick.getRawButton(4)) {
+			} else if (m_stick.getRawButton(1)) { // A
 				turnController.setSetpoint(179.9f);
 				rotateToAngle = true;
-			} else if (m_stick.getRawButton(5)) {
+			} else if (m_stick.getRawButton(3)) { // X
 				turnController.setSetpoint(-90.0f);
 				rotateToAngle = true;
 			}
@@ -147,7 +159,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 			if (rotateToAngle) {
 				turnController.enable();
 				currentRotationRate = rotateToAngleRate;
-				m_robotDrive.arcadeDrive(.5, currentRotationRate);
+				m_robotDrive.arcadeDrive(0.0f, currentRotationRate);
 			} else {
 				turnController.disable();
 				m_robotDrive.tankDrive(m_stick.getRawAxis(5) * -1.0, m_stick.getY() * -1.0, true);
@@ -162,6 +174,12 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	 */
 	@Override
 	public void testPeriodic() {
+		double currentRotationRate;
+
+		currentRotationRate = rotateToAngleRate;
+		m_robotDrive.arcadeDrive(0.0f, currentRotationRate);
+		
+		Timer.delay(0.005); // wait for a motor update time
 	}
 	
     @Override
