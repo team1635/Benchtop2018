@@ -8,6 +8,8 @@
 package org.usfirst.frc.team1635.robot;
 
 import com.kauailabs.navx.frc.AHRS;
+
+import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
@@ -62,7 +64,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 
 		turnController = new PIDController(kP, kI, kD, kF, ahrs, this);
 		turnController.setInputRange(-180.0f, 180.0f);
-		turnController.setOutputRange(-0.5, 0.5);
+		turnController.setOutputRange(-0.7, 0.7);
 		turnController.setAbsoluteTolerance(kToleranceDegrees);
 		turnController.setContinuous(true);
 
@@ -82,6 +84,7 @@ public class Robot extends IterativeRobot implements PIDOutput {
 	@Override
 	public void robotInit() {
 		this.m_robotDrive.setSafetyEnabled(false);
+		CameraServer.getInstance().startAutomaticCapture();
 	}
 
 	/**
