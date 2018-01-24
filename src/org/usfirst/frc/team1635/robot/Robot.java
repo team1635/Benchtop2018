@@ -30,6 +30,17 @@ import edu.wpi.first.wpilibj.SpeedControllerGroup;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  */
+
+//
+//.---.  ,--.    .-----. .------.  
+///_   | /  .'   /  -.   \|   ___|  
+//|   |.  / -.  '-' _'  ||  '--.   
+//|   || .-.  '    |_  < `---.  '. 
+//|   |' \  |  |.-.  |  |.-   |  | 
+//|   |\  `'  / \ `-'   /| `-'   / 
+//`---' `----'   `----''  `----''  
+//
+
 public class Robot extends IterativeRobot implements PIDOutput {
 	private VictorSP frontLeftMotor = new VictorSP(8);
 	private VictorSP backLeftMotor = new VictorSP(1);
