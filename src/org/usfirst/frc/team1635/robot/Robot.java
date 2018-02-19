@@ -16,12 +16,12 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.SPI;
-import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
+import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -42,12 +42,12 @@ import edu.wpi.first.wpilibj.SpeedControllerGroup;
 //
 
 public class Robot extends IterativeRobot implements PIDOutput {
-	private VictorSP frontLeftMotor = new VictorSP(8);
-	private VictorSP backLeftMotor = new VictorSP(1);
+	private WPI_VictorSPX frontLeftMotor = new WPI_VictorSPX(25);
+	private WPI_VictorSPX backLeftMotor = new WPI_VictorSPX(24);
 	private SpeedControllerGroup leftSCG = new SpeedControllerGroup(frontLeftMotor, backLeftMotor);
 
-	private VictorSP frontRightMotor = new VictorSP(9);
-	private VictorSP backRightMotor = new VictorSP(0);
+	private WPI_VictorSPX frontRightMotor = new WPI_VictorSPX(9);
+	private WPI_VictorSPX backRightMotor = new WPI_VictorSPX(0);
 	private SpeedControllerGroup rightSCG = new SpeedControllerGroup(frontRightMotor, backRightMotor);
 
 	private DifferentialDrive m_robotDrive = new DifferentialDrive(rightSCG, leftSCG);
